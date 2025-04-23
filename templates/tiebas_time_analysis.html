@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<script src="../static/js/jquery.min.js" type="text/javascript" charset='utf-8'></script>
+<script src="../static/js/echarts.js" charset='utf-8'></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts-stat/dist/ecStat.min.js"></script>
+
+<script type="text/javascript">
+    // 初始化界面
+    $(function () {
+
+        $('#li_1').attr('class', '');
+        $('#li_2').attr('class', '');
+        $('#li_3').attr('class', 'active');
+
+        // 判断是否登录
+        $.get('http://127.0.0.1:5000/check_login', {},
+            function (data) {
+                console.log(data);
+                if (data['login'] === false) {
+                    window.location.href = '/'
+                }
+                else {
+                    $('#show_login_reg').hide();
+                    $('#index_img').css('height', '95%');
+                }
+            }
+        );
+
+        $('#myTab').find("li").each(function () {
+            $(this).click(function () {
+                $('#top_items').empty();
+                const key = $(this).text();
+                console.log(key);
+
+                $.get('http://127.0.0.1:5000/tieba_time_vis/' + key, {},
+                    function (data) {
+                        var dom = document.getElementById("main1");
+                        var myChart = echarts.init(dom);
+
+                        var option = {
+                            title: {
+                                left: 'center',
+                                text: key + '贴吧发布贴子数量的变化情况',
+                            },
+                            tooltip: {
+                                trigger: 'axis'
+                            },
+                            toolbox: {
+                                show: true,
+                                feature: {
+                                    dataZoom: {
+                                        yAxisIndex: 'none'
+                                    },
+                                    dataView: {readOnly: false},
+                                    magicType: {type: ['line', 'bar']},
+                                    restore: {},
+                                    saveAsImage: {}
+                                }
+                            },
+                            xAxis: {
+                                type: 'category',
+                                boundaryGap: false,
+                                data: data['日期']
+                            },
+                            yAxis: {
+                                name: '发贴数量',
+                                type: 'value',
+                                axisLabel: {
+                                    formatter: '{value}'
+                                }
+                            },
+                            series: [
+                                {
+                                    name: '日发贴数量',
+                                    type: 'line',
+                                    data: data['贴数'],
+                                    markPoint: {
+                                        data: [
+                                            {type: 'max', name: '最大值'},
+                                            {type: 'min', name: '最小值'}
+                                        ]
+                                    },
+                                    markLine: {
+                                        data: [
+                                            {type: 'average', name: '平均值'}
+                                        ]
+                                    }
+                                }
+                            ]
+                        };
+
+                        if (option && typeof option === "object") {
+                            myChart.setOption(option, true);
+                        }
+                    }
+                );
+            })
+        });
+
+        $('#first').click();
+    });
+</script>
+
+<div class="container">
+    <!--右边展示-->
+    <div class="row">
+        <h3 class="page-header">贴吧热度分析</h3>
+        <ul id="myTab" class="nav nav-tabs" style="font-size: 20px;">
+            <li class="active" id="first"><a id="中国人民公安大学" data-toggle="tab"><b>中国人民公安大学</b></a></li>
+            <li><a id="中国刑事警察学院" data-toggle="tab"><b>中国刑事警察学院</b></a></li>
+            <li><a id="华北电力大学" data-toggle="tab"><b>华北电力大学</b></a></li>
+            <li><a id="河北大学" data-toggle="tab"><b>河北大学</b></a></li>
+            <li><a id="中央司法警官学院" data-toggle="tab"><b>中央司法警官学院</b></a></li>
+        </ul>
+    </div>
+    <div class="col-xs-12 placeholder" style="height:520px; margin-top: 10px;" id="main1"></div>
+
+</div>
+
+{% endblock %}
